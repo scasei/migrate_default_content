@@ -187,6 +187,44 @@ function migrate_default_content_migration_plugins_alter(&$definitions) {
         }
       }
     }
+    
+    if ('file'===$migration['entity_type']) {
+        
+         $migration_plugin['source']['constants'] = [
+                'source_base_path' => $source_dir . '/files/'.$migration['bundle'].'/',
+                'destination_base_uri' => 'public://'.$id.'/',
+                'type'=> $migration['bundle']
+            ];
+
+        $migration_plugin['process'] = array_merge($migration_plugin['process'],[
+    
+            'destination_full_uri' => [
+                'plugin' => 'concat',
+                'source' => [
+                    'constants/destination_base_uri',
+                    'filename',
+                ],
+            ],
+            'source_full_path' => [
+                'plugin' => 'concat',
+                'source' => [
+                    'constants/source_base_path',
+                    'filename',
+                ],
+            ],
+            'uri' => [
+                'plugin' => 'file_copy',
+                'source' => [
+                    '@source_full_path',
+                    '@destination_full_uri',
+                ],
+            ],
+            'type' => [
+                'plugin' => 'get',
+                'source' => 'constants/type',
+            ]
+        ]);
+    }
 
     // Look up for an override yml file.
     $override_file_path = $source_dir . '/overrides/' . $migration['entity_type'] . '.' . $migration['bundle'] . '.yml';
@@ -211,6 +249,7 @@ function migrate_default_content_migration_plugins_alter(&$definitions) {
         'constants' => [
           'source_base_path' => $source_dir . '/files/',
           'destination_base_uri' => 'public://migrate_default_content_files/',
+          'type'=> 'imagedatabaseimage'  
         ],
       ],
       'process' => [
@@ -238,7 +277,7 @@ function migrate_default_content_migration_plugins_alter(&$definitions) {
             '@source_full_path',
             '@destination_full_uri',
           ],
-        ],
+        ]
       ],
       'destination' => [
         'plugin' => 'entity:file',
